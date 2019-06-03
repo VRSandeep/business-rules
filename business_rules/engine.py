@@ -73,10 +73,20 @@ def check_conditions_recursively(conditions, defined_variables, rule):
                 return True, matches_results
         return False, []
 
+    elif keys == ['checkall']:
+        assert len(conditions['checkall']) >= 1
+        matches = []
+        condition_result = []
+        for condition in conditions['checkall']:
+            check_condition_result, matches_results = check_conditions_recursively(condition, defined_variables, rule)
+            matches.extend(matches_results)
+            condition_result.append(check_condition_result)
+        return condition_result, matches
+
     else:
         # help prevent errors - any and all can only be in the condition dict
         # if they're the only item
-        assert not ('any' in keys or 'all' in keys)
+        assert not ('any' in keys or 'all' in keys or 'checkall' in keys)
         result = check_condition(conditions, defined_variables, rule)
         return result[0], [result]
 

@@ -215,7 +215,7 @@ def validate_rule_data(variables, actions, rule):
                 validate_conditions(condition, rule_schema)
         if isinstance(input_conditions, dict):
             keys = list(input_conditions.keys())
-            if 'any' in keys or 'all' in keys:
+            if 'any' in keys or 'all' in keys or 'checkall' in keys:
                 if len(keys) > 1:
                     raise AssertionError('Expected ONE of "any" or "all" but found {}'.format(keys))
                 else:
