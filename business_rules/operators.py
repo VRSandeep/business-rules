@@ -77,31 +77,31 @@ class StringType(BaseType):
 
     @type_operator(FIELD_TEXT)
     def equal_to(self, other_string):
-        return self.value == other_string
+        return self.value, self.value == other_string
 
     @type_operator(FIELD_TEXT, label="Equal To (case insensitive)")
     def equal_to_case_insensitive(self, other_string):
-        return self.value.lower() == other_string.lower()
+        return self.value, self.value.lower() == other_string.lower()
 
     @type_operator(FIELD_TEXT)
     def starts_with(self, other_string):
-        return self.value.startswith(other_string)
+        return self.value, self.value.startswith(other_string)
 
     @type_operator(FIELD_TEXT)
     def ends_with(self, other_string):
-        return self.value.endswith(other_string)
+        return self.value, self.value.endswith(other_string)
 
     @type_operator(FIELD_TEXT)
     def contains(self, other_string):
-        return other_string in self.value
+        return self.value, other_string in self.value
 
     @type_operator(FIELD_TEXT)
     def matches_regex(self, regex):
-        return re.search(regex, self.value)
+        return self.value, re.search(regex, self.value)
 
     @type_operator(FIELD_NO_INPUT)
     def non_empty(self):
-        return bool(self.value)
+        return self.value, bool(self.value)
 
 
 @export_type
@@ -125,23 +125,23 @@ class NumericType(BaseType):
 
     @type_operator(FIELD_NUMERIC)
     def equal_to(self, other_numeric):
-        return abs(self.value - other_numeric) <= self.EPSILON
+        return self.value, abs(self.value - other_numeric) <= self.EPSILON
 
     @type_operator(FIELD_NUMERIC)
     def greater_than(self, other_numeric):
-        return (self.value - other_numeric) > self.EPSILON
+        return self.value, (self.value - other_numeric) > self.EPSILON
 
     @type_operator(FIELD_NUMERIC)
     def greater_than_or_equal_to(self, other_numeric):
-        return self.greater_than(other_numeric) or self.equal_to(other_numeric)
+        return self.value, self.greater_than(other_numeric) or self.equal_to(other_numeric)
 
     @type_operator(FIELD_NUMERIC)
     def less_than(self, other_numeric):
-        return (other_numeric - self.value) > self.EPSILON
+        return self.value, (other_numeric - self.value) > self.EPSILON
 
     @type_operator(FIELD_NUMERIC)
     def less_than_or_equal_to(self, other_numeric):
-        return self.less_than(other_numeric) or self.equal_to(other_numeric)
+        return self.value, self.less_than(other_numeric) or self.equal_to(other_numeric)
 
 
 @export_type
@@ -156,11 +156,11 @@ class BooleanType(BaseType):
 
     @type_operator(FIELD_NO_INPUT)
     def is_true(self):
-        return self.value
+        return self.value, self.value
 
     @type_operator(FIELD_NO_INPUT)
     def is_false(self):
-        return not self.value
+        return self.value, not self.value
 
 
 @export_type
@@ -185,15 +185,15 @@ class SelectType(BaseType):
     def contains(self, other_value):
         for val in self.value:
             if self._case_insensitive_equal_to(val, other_value):
-                return True
-        return False
+                return self.value, True
+        return self.value, False
 
     @type_operator(FIELD_SELECT, assert_type_for_arguments=False)
     def does_not_contain(self, other_value):
         for val in self.value:
             if self._case_insensitive_equal_to(val, other_value):
-                return False
-        return True
+                return self.value, False
+        return self.value, True
 
 
 @export_type
@@ -211,21 +211,21 @@ class SelectMultipleType(BaseType):
         select = SelectType(self.value)
         for other_val in other_value:
             if not select.contains(other_val):
-                return False
-        return True
+                return self.value, False
+        return self.value, True
 
     @type_operator(FIELD_SELECT_MULTIPLE)
     def is_contained_by(self, other_value):
         other_select_multiple = SelectMultipleType(other_value)
-        return other_select_multiple.contains_all(self.value)
+        return self.value, other_select_multiple.contains_all(self.value)
 
     @type_operator(FIELD_SELECT_MULTIPLE)
     def shares_at_least_one_element_with(self, other_value):
         select = SelectType(self.value)
         for other_val in other_value:
             if select.contains(other_val):
-                return True
-        return False
+                return self.value, True
+        return self.value, False
 
     @type_operator(FIELD_SELECT_MULTIPLE)
     def shares_exactly_one_element_with(self, other_value):
@@ -234,13 +234,13 @@ class SelectMultipleType(BaseType):
         for other_val in other_value:
             if select.contains(other_val):
                 if found_one:
-                    return False
+                    return self.value, False
                 found_one = True
-        return found_one
+        return self.value, found_one
 
     @type_operator(FIELD_SELECT_MULTIPLE)
     def shares_no_elements_with(self, other_value):
-        return not self.shares_at_least_one_element_with(other_value)
+        return self.value, not self.shares_at_least_one_element_with(other_value)
 
 
 @export_type
@@ -287,29 +287,29 @@ class DateTimeType(BaseType):
         # type: (datetime) -> bool
         other_datetime = self._set_timezone_if_different(self.value, other_datetime)
 
-        return self.value == other_datetime
+        return self.value, self.value == other_datetime
 
     @type_operator(FIELD_DATETIME)
     def after_than(self, other_datetime):
         # type: (datetime) -> bool
         other_datetime = self._set_timezone_if_different(self.value, other_datetime)
 
-        return self.value > other_datetime
+        return self.value, self.value > other_datetime
 
     @type_operator(FIELD_DATETIME)
     def after_than_or_equal_to(self, other_datetime):
-        return self.after_than(other_datetime) or self.equal_to(other_datetime)
+        return self.value, self.after_than(other_datetime) or self.equal_to(other_datetime)
 
     @type_operator(FIELD_DATETIME)
     def before_than(self, other_datetime):
         # type: (datetime) -> bool
         other_datetime = self._set_timezone_if_different(self.value, other_datetime)
 
-        return self.value < other_datetime
+        return self.value, self.value < other_datetime
 
     @type_operator(FIELD_DATETIME)
     def before_than_or_equal_to(self, other_datetime):
-        return self.before_than(other_datetime) or self.equal_to(other_datetime)
+        return self.value, self.before_than(other_datetime) or self.equal_to(other_datetime)
 
 
 @export_type
@@ -345,20 +345,20 @@ class TimeType(BaseType):
 
     @type_operator(FIELD_TIME)
     def equal_to(self, other_time):
-        return self.value == other_time
+        return self.value, self.value == other_time
 
     @type_operator(FIELD_TIME)
     def after_than(self, other_time):
-        return self.value > other_time
+        return self.value, self.value > other_time
 
     @type_operator(FIELD_TIME)
     def after_than_or_equal_to(self, other_time):
-        return self.after_than(other_time) or self.equal_to(other_time)
+        return self.value, self.after_than(other_time) or self.equal_to(other_time)
 
     @type_operator(FIELD_TIME)
     def before_than(self, other_time):
-        return self.value < other_time
+        return self.value, self.value < other_time
 
     @type_operator(FIELD_TIME)
     def before_than_or_equal_to(self, other_time):
-        return self.before_than(other_time) or self.equal_to(other_time)
+        return self.value, self.before_than(other_time) or self.equal_to(other_time)

@@ -62,15 +62,17 @@ def check_conditions_recursively(conditions, defined_variables, rule):
             check_condition_result, matches_results = check_conditions_recursively(condition, defined_variables, rule)
             matches.extend(matches_results)
             if not check_condition_result:
-                return False, []
+                return False, matches
         return True, matches
 
     elif keys == ['any']:
         assert len(conditions['any']) >= 1
+        matches = []
         for condition in conditions['any']:
             check_condition_result, matches_results = check_conditions_recursively(condition, defined_variables, rule)
+            matches.extend(matches_results)
             if check_condition_result:
-                return True, matches_results
+                return True, matches
         return False, []
 
     elif keys == ['checkall']:
@@ -114,8 +116,10 @@ def check_condition(condition, defined_variables, rule):
     name, op, value = condition['name'], condition['operator'], condition['value']
     params = condition.get('params', {})
     operator_type = _get_variable_value(defined_variables, name, params, rule)
-    return ConditionResult(result=_do_operator_comparison(operator_type, op, value), name=name, operator=op,
-                           value=value, parameters=params)
+    computed_value, result = _do_operator_comparison(operator_type, op, value)
+
+    return ConditionResult(result=result, name=name, operator=op,
+                           input_value=value, computed_value=computed_value, parameters=params)
 
 
 def _get_variable_value(defined_variables, name, params, rule):
